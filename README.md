@@ -134,9 +134,5 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 - UI components by [shadcn/ui](https://ui.shadcn.com)
 
 ## Support 💬
-
-For support, email support@weatherwizard.com or open an issue in the repository.
-
+@greenido
 ---
-
-Made with ❤️ by [Your Name] 
