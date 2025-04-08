@@ -61,8 +61,14 @@ Before you begin, ensure you have the following installed:
    ```bash
    npm run dev
    ```
+5. Start the production server:
+   ```bash
+    pm2 start ecosystem.config.js
+    OR
+   pm2 start ecosystem.config.js --env production
+   ```
 
-The application will be available at `http://localhost:5173`
+The application will be available at `http://localhost:5173` or `http://localhost:3030`
 
 ## Building for Production 🏗️
 
