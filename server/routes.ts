@@ -84,7 +84,9 @@ export async function registerRoutes(app: Express): Promise<Server> {
     }
   });
   
+  //
   // Get location name from coordinates
+  // 
   app.get('/api/weather/location', async (req, res) => {
     try {
       const { lat, lon } = req.query;
