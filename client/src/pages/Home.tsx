@@ -547,69 +547,94 @@ export default function Home() {
             <div className="mt-8">
               <h3 className="text-lg font-semibold mb-4 dark:text-white">10-Day Forecast Summary</h3>
               <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-4">
-                {weatherData?.forecast?.forecastday.map((day) => (
-                  <div
-                    key={day.date}
-                    className="bg-gray-50 dark:bg-slate-700 rounded-lg p-4"
-                  >
-                    <div className="flex items-center justify-between mb-2">
-                      <div>
-                        <h4 className="font-medium dark:text-white">
-                          {new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}
-                        </h4>
-                        <p className="text-sm text-gray-500 dark:text-gray-400">
-                          {new Date(day.date).toLocaleDateString('en-US', { 
-                            month: 'short',
-                            day: 'numeric'
-                          })}
-                        </p>
+                {weatherData?.forecast?.forecastday.map((day) => {
+                  // Parse the location's local time
+                  //console.log('Location time:', weatherData.location.localtime);
+                  const locationDate = new Date(weatherData.location.localtime);
+                  //console.log('Location date object:', locationDate);
+                  
+                  // Create a date object for the forecast day
+                  const localOffset = new Date().getTimezoneOffset();
+                  //console.log('Local timezone offset (minutes):', localOffset);
+                  
+                  const forecastDate = new Date(day.date + 'T00:00:00');
+                  //console.log('Initial forecast date:', forecastDate);
+                  
+                  forecastDate.setMinutes(forecastDate.getMinutes() + localOffset);
+                  //console.log('Adjusted forecast date:', forecastDate);
+                  
+                  // Check if this is today by comparing year, month, and day
+                  const isToday = 
+                    forecastDate.getFullYear() === locationDate.getFullYear() &&
+                    forecastDate.getMonth() === locationDate.getMonth() &&
+                    forecastDate.getDate() === locationDate.getDate();
+                  
+                  return (
+                    <div
+                      key={day.date}
+                      className={`${
+                        isToday ? 'bg-blue-50 dark:bg-blue-900' : 'bg-gray-50 dark:bg-slate-700'
+                      } rounded-lg p-4`}
+                    >
+                      <div className="flex items-center justify-between mb-2">
+                        <div>
+                          <h4 className="font-medium dark:text-white">
+                            {isToday ? 'Today' : forecastDate.toLocaleDateString('en-US', { weekday: 'short' })}
+                          </h4>
+                          <p className="text-sm text-gray-500 dark:text-gray-400">
+                            {forecastDate.toLocaleDateString('en-US', { 
+                              month: 'short',
+                              day: 'numeric'
+                            })}
+                          </p>
+                        </div>
+                        <img
+                          src={day.day.condition.icon}
+                          alt={day.day.condition.text}
+                          className="w-10 h-10"
+                        />
                       </div>
-                      <img
-                        src={day.day.condition.icon}
-                        alt={day.day.condition.text}
-                        className="w-10 h-10"
-                      />
-                    </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">High / Low</span>
-                        <div className="text-right">
-                          <span className="text-sm font-medium dark:text-white">
-                            {convertTemp(day.day.maxtemp_c)}{getTempUnit()}
+                      <div className="space-y-2">
+                        <div className="flex justify-between items-center">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">High / Low</span>
+                          <div className="text-right">
+                            <span className="text-sm font-medium dark:text-white">
+                              {convertTemp(day.day.maxtemp_c)}{getTempUnit()}
+                            </span>
+                            <span className="text-sm text-gray-500 dark:text-gray-400 mx-1">/</span>
+                            <span className="text-sm font-medium dark:text-white">
+                              {convertTemp(day.day.mintemp_c)}{getTempUnit()}
+                            </span>
+                          </div>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Conditions</span>
+                          <span className="text-sm font-medium dark:text-white text-right">
+                            {day.day.condition.text}
                           </span>
-                          <span className="text-sm text-gray-500 dark:text-gray-400 mx-1">/</span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Wind</span>
                           <span className="text-sm font-medium dark:text-white">
-                            {convertTemp(day.day.mintemp_c)}{getTempUnit()}
+                            {day.day.maxwind_kph} km/h
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Precip</span>
+                          <span className="text-sm font-medium dark:text-white">
+                            {day.day.totalprecip_mm} mm
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-sm text-gray-500 dark:text-gray-400">Humidity</span>
+                          <span className="text-sm font-medium dark:text-white">
+                            {day.day.avghumidity}%
                           </span>
                         </div>
                       </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Conditions</span>
-                        <span className="text-sm font-medium dark:text-white text-right">
-                          {day.day.condition.text}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Wind</span>
-                        <span className="text-sm font-medium dark:text-white">
-                          {day.day.maxwind_kph} km/h
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Precip</span>
-                        <span className="text-sm font-medium dark:text-white">
-                          {day.day.totalprecip_mm} mm
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-sm text-gray-500 dark:text-gray-400">Humidity</span>
-                        <span className="text-sm font-medium dark:text-white">
-                          {day.day.avghumidity}%
-                        </span>
-                      </div>
                     </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
             </div>
           </div>

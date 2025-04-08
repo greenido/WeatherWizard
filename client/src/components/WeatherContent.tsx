@@ -86,6 +86,39 @@ export default function WeatherContent({ weatherData }: WeatherContentProps) {
   const current = weatherData.current;
   const location = weatherData.location;
 
+  // Helper function to determine if it's daytime
+  const isDaytime = (hour: number) => {
+    return hour >= 6 && hour < 18; // Consider 6 AM to 6 PM as daytime
+  };
+
+  // Helper function to get background color based on time
+  const getTimeBackgroundColor = (hour: number, isCurrentHour: boolean) => {
+    if (isCurrentHour) {
+      return 'bg-blue-100 dark:bg-blue-800';
+    }
+    return isDaytime(hour)
+      ? 'bg-sky-50 dark:bg-slate-700'
+      : 'bg-slate-100 dark:bg-slate-800';
+  };
+
+  // Helper function to get text color based on time
+  const getTimeTextColor = (hour: number, isCurrentHour: boolean) => {
+    if (isCurrentHour) {
+      return 'text-blue-800 dark:text-blue-200';
+    }
+    return isDaytime(hour)
+      ? 'text-slate-800 dark:text-slate-200'
+      : 'text-slate-600 dark:text-slate-400';
+  };
+
+  // Helper function to get the time period indicator
+  const getTimePeriodIndicator = (hour: number) => {
+    if (hour >= 6 && hour < 12) return '🌅'; // Morning
+    if (hour >= 12 && hour < 17) return '☀️'; // Afternoon
+    if (hour >= 17 && hour < 20) return '🌅'; // Evening
+    return '��'; // Night
+  };
+
   return (
     <div className="bg-white dark:bg-slate-800 rounded-xl shadow-sm overflow-hidden">
       {/* Current Weather Summary */}
@@ -179,15 +212,17 @@ export default function WeatherContent({ weatherData }: WeatherContentProps) {
       {/* Weather data rows */}
       <div className="overflow-x-auto relative">
         <div className="min-w-max">
-          {/* Days header - now inside the scrollable container */}
+          {/* Days header */}
           <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
             <div className="col-span-1 py-3 px-2 bg-gray-50 dark:bg-slate-700 font-medium text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10 shadow-md">
-              Days
+              Time
             </div>
             {days.map((day, dayIndex) => (
               <div
                 key={`${day.date}-header`}
-                className={`col-span-12 text-center py-3 font-semibold border-r dark:border-slate-600 ${dayIndex === days.length - 1 ? "border-r-0" : ""}`}
+                className={`col-span-12 text-center py-3 font-semibold border-r dark:border-slate-600 ${
+                  dayIndex === days.length - 1 ? "border-r-0" : ""
+                }`}
               >
                 <span className="hidden sm:inline dark:text-white">
                   {day.display}
@@ -197,6 +232,59 @@ export default function WeatherContent({ weatherData }: WeatherContentProps) {
                 </span>
               </div>
             ))}
+          </div>
+
+          {/* Time row */}
+          <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
+            <div className="col-span-1 py-2 px-2 bg-gray-50 dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10 shadow-md">
+              Hour
+            </div>
+            {days.map((day, dayIndex) =>
+              fixedHoursToShow.map((hour) => {
+                const isCurrentTime = isCurrentTimeColumn(dayIndex, hour, fixedHoursToShow);
+                return (
+                  <div
+                    key={`${day.date}-${hour}`}
+                    className={`col-span-1 py-2 text-center border-r dark:border-slate-600 ${
+                      getTimeBackgroundColor(hour, isCurrentTime)
+                    }`}
+                  >
+                    <div className={`text-sm font-medium ${getTimeTextColor(hour, isCurrentTime)}`}>
+                      {hour}:00
+                      <span className="ml-1 text-xs">
+                        {getTimePeriodIndicator(hour)}
+                      </span>
+                    </div>
+                  </div>
+                );
+              })
+            )}
+          </div>
+
+          {/* Temperature row */}
+          <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
+            <div className="col-span-1 py-2 px-2 bg-gray-50 dark:bg-slate-700 text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10 shadow-md">
+              Temp
+            </div>
+            {days.map((day, dayIndex) =>
+              fixedHoursToShow.map((hour) => {
+                const hourData = day.hour.find((h) => new Date(h.time).getHours() === hour);
+                const isCurrentTime = isCurrentTimeColumn(dayIndex, hour, fixedHoursToShow);
+                return (
+                  <div
+                    key={`${day.date}-${hour}-temp`}
+                    className={`col-span-1 py-2 text-center border-r dark:border-slate-600 ${
+                      getTimeBackgroundColor(hour, isCurrentTime)
+                    }`}
+                  >
+                    <span className={`text-sm font-medium ${getTimeTextColor(hour, isCurrentTime)}`}>
+                      {hourData ? Math.round(convertToDisplayUnit(hourData.temp_c)) : "-"}
+                      {hourData ? unitSymbol : ""}
+                    </span>
+                  </div>
+                );
+              })
+            )}
           </div>
 
           {/* Daily Summary row */}
@@ -265,41 +353,6 @@ export default function WeatherContent({ weatherData }: WeatherContentProps) {
             ))}
           </div>
 
-          {/* Hours row */}
-          <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
-            <div className="col-span-1 py-3 px-2 bg-gray-50 dark:bg-slate-700 font-medium text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10 shadow-md">
-              Hours
-            </div>
-            {days.map((day, dayIndex) => {
-              // Use current day hours for today, fixed hours for future days
-              const hoursSet =
-                dayIndex === 0 ? currentDayHours : fixedHoursToShow;
-
-              return hoursSet.map((hour) => {
-                const hourData = day.hour.find(
-                  (h) => new Date(h.time).getHours() === hour,
-                );
-                if (!hourData) return null;
-
-                // Check if this is the first day and current hour (or closest to current hour)
-                const isCurrentHour =
-                  dayIndex === 0 &&
-                  ((currentHour >= hour && currentHour < hour + 2) ||
-                    (hour === hoursSet[hoursSet.length - 1] &&
-                      currentHour >= hour));
-
-                return (
-                  <div
-                    key={hourData.time}
-                    className={`col-span-1 py-2 px-1 text-center text-sm border-r dark:border-slate-600 
-                      ${isCurrentHour ? "bg-blue-100 dark:bg-blue-800 dark:text-white font-bold" : "dark:text-gray-300"}`}
-                    dangerouslySetInnerHTML={{ __html: getHourString(hour) }}
-                  ></div>
-                );
-              });
-            })}
-          </div>
-
           {/* Weather icon row */}
           <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
             <div className="col-span-1 py-3 px-2 bg-gray-50 dark:bg-slate-700 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10">
@@ -335,37 +388,6 @@ export default function WeatherContent({ weatherData }: WeatherContentProps) {
                       ${isCurrentHour ? "bg-blue-50 dark:bg-blue-900" : ""}`}
                   >
                     {getWeatherIcon(hourData.condition.code, hourData.is_day)}
-                  </div>
-                );
-              });
-            })}
-          </div>
-
-          {/* Temperature row */}
-          <div className={`grid ${gridCols} border-b dark:border-slate-600`}>
-            <div className="col-span-1 py-3 px-2 bg-gray-50 dark:bg-slate-700 font-medium text-sm text-gray-600 dark:text-gray-300 flex items-center justify-center border-r dark:border-slate-600 sticky left-0 z-10">
-              <span>Temperature</span>
-              <span className="ml-1 text-xs">{unitSymbol}</span>
-            </div>
-            {days.map((day, dayIndex) => {
-              const hoursSet =
-                dayIndex === 0 ? currentDayHours : fixedHoursToShow;
-
-              return hoursSet.map((hour) => {
-                const hourData = day.hour.find(
-                  (h) => new Date(h.time).getHours() === hour,
-                );
-                if (!hourData) return null;
-                // Convert according to selected unit
-                const temp = Math.round(convertToDisplayUnit(hourData.temp_c));
-                // Get color based on temperature in Celsius for consistent colors
-                const bgColor = getTemperatureColor(hourData.temp_c);
-                return (
-                  <div
-                    key={hourData.time}
-                    className={`col-span-1 py-3 px-1 text-center font-medium border-r dark:border-slate-600 ${bgColor}`}
-                  >
-                    {temp}°
                   </div>
                 );
               });
